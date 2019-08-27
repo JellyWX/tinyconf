@@ -4,7 +4,7 @@ from tinyconf.fields import *
 class ini(IniDeserializer):
     __filename__ = 'test.ini'
 
-    integer = IntegerField('integer')
+    integer = IntegerField()
     float_ = FloatField('float')
     string = Field('string')
     list_a = ListField('list')
