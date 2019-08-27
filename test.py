@@ -1,4 +1,4 @@
-from tinyconf import *
+from tinyconf.deserializers import *
 from tinyconf.fields import *
 
 class ini(IniDeserializer):

@@ -12,16 +12,9 @@ class Field():
             Whether the field is strictly required. Defauls to ``False``
             Will cause deserialization to raise :class:`MissingFieldData`
             if an item is missing
-        max_length: :class:`int`
-            Maximum length of field data. Defaults to ``1024``. Will cause
-            deserialization to raise :class:`FieldLengthExceeded` on items
-            exceeding this length
+        default:
+            Specify a default value if the config doesn't specify one
     """
-    class FieldLengthExceeded(Exception):
-        """Exception for when a config item is too long
-
-        """
-        pass
 
     class MissingFieldData(Exception):
         """Exception for when a field marked as strict is set as ``None``
@@ -29,11 +22,11 @@ class Field():
         """
         pass
 
-    def __init__(self, name: typing.Optional[str], *, strict: bool=False, max_length: int=1024, **kwargs):
-        self.name: str = name
+    def __init__(self, name: typing.Optional[str]=None, *, strict: bool=False, default: typing.Any=None, **kwargs):
+        self.name: typing.Optional[str] = name
         self._value: typing.Optional[str] = None
+        self._default: typing.Any = default
         self._strict: bool = strict
-        self._max_length: int = max_length
 
         self._type_specific_setup(**kwargs)
 
@@ -46,10 +39,7 @@ class Field():
     
     @value.setter
     def value(self, value):
-        if value is not None and len(value) > self._max_length:
-            raise self.FieldLengthExceeded
-        else:
-            self._value = value
+        self._value = value
 
     def validate(self):
         """Used during deserialization to determine if there are any issues with
@@ -58,6 +48,8 @@ class Field():
         """
         if self._value is None and self._strict:
             raise self.MissingFieldData
+        elif self._value is None and self._default is not None:
+            self._value = self._default
         elif self._value is not None:
             self._type_specific_validation()
 
@@ -112,7 +104,7 @@ class ListField(Field):
     Parameters
     ----------
         delimiter: :class:`str`
-            Specifies the list delimiter
+            Specifies the list delimiter. Defaults to ``","``
         remove_blank: :class:`bool`
             Specifies if empty list items should be removed. Defaults to ``False``
     """

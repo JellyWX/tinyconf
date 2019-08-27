@@ -30,26 +30,37 @@ class Deserializer():
 class IniDeserializer(Deserializer):
     """Class representing a deserializer for an INI file.
     
+    Parameters
+    ----------
+    
+        *args:
+            All unnamed arguments are passed to the underlying :class:`ConfigParser`
+        **kwargs:
+            All named arguments are passed to the underlying :class:`ConfigParser`
+
     Attributes
     ----------
+
         __filename__: Optional[:class:`str`]
-            Name of the file to be loaded
+            Name of the file to be loaded. Either this or :attr:`__config__`
+            must be defined.
 
         __config__: Optional[:class:`str`]
             Raw string of ini-formatted data to be loaded. Either this or
-            ``__filename__`` must be defined
+            :attr:`__filename__` must be defined
     """
     class NoConfig(Exception):
-        """Raised when both ``__filename__`` and ``__config__`` are missing.
+        """Raised when both :attr:`IniDeserializer.__filename__` and
+        :attr:`IniDeserializer.__config__` are missing.
 
         """
         pass
 
-    def __init__(self):
-        cp = ConfigParser()
+    def __init__(self, *args, **kwargs):
+        cp = ConfigParser(*args, **kwargs)
         try:
             cp.read_file(open(self.__filename__, 'r'))
-        except NameError:
+        except:
             try:
                 cp.read_string(self.__config__)
             except NameError:

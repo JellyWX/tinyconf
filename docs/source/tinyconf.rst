@@ -4,6 +4,14 @@ tinyconf package
 Submodules
 ----------
 
+tinyconf.deserializers module
+-----------------------------
+
+.. automodule:: tinyconf.deserializers
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 tinyconf.fields module
 ----------------------
 
