@@ -35,7 +35,7 @@ class Field():
         """Used during deserialization
 
         """
-        return self._value
+        return self._value or self._default
     
     @value.setter
     def value(self, value):
@@ -48,8 +48,6 @@ class Field():
         """
         if self._value is None and self._strict:
             raise self.MissingFieldData
-        elif self._value is None and self._default is not None:
-            self._value = self._default
         elif self._value is not None:
             self._type_specific_validation()
 
