@@ -7,7 +7,13 @@ from tinyconf.fields import *
 
 import unittest
 
-class DeserializeTester(unittest.TestCase):
+class FieldTester(unittest.TestCase):
+    def assertDoesntRaise(self, proc):
+        try:
+            proc()
+        except Exception as e:
+            self.fail(f"{proc.__repr__()} raised {e.__repr__()}")
+
     def setUp(self):
         class TestDeserialize(Deserializer):
             integer = IntegerField()
@@ -39,8 +45,25 @@ class DeserializeTester(unittest.TestCase):
         self.assertRaises(Field.MissingFieldData, field.validate)
 
         field._value = "t"
-        field.validate()
+        self.assertDoesntRaise(field.validate)
 
         self.assertEqual(field.value, "t")
+
+    def testInteger(self):
+        field = IntegerField("test")
+
+        field.value = "t"
+
+        self.assertRaises(IntegerField.InvalidInteger, field.validate)
+
+        field.value = "14"
+
+        self.assertDoesntRaise(field.validate)
+        self.assertEqual(field.value, 14)
+
+        field.value = "14.7"
+
+        self.assertRaises(IntegerField.InvalidInteger, field.validate)
+        self.assertTrue(field.value is None)
 
 unittest.main(verbosity=2)

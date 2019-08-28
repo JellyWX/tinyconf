@@ -1,4 +1,5 @@
 import typing
+import types
 
 class Field():
     """Field type that deserializes directly into a :class:`str`
@@ -24,6 +25,7 @@ class Field():
 
     def __init__(self, name: typing.Optional[str]=None, *, strict: bool=False, default: typing.Any=None, **kwargs):
         self.name: typing.Optional[str] = name
+        self.valid: bool = True
         self._value: typing.Optional[str] = None
         self._default: typing.Any = default
         self._strict: bool = strict
@@ -35,7 +37,11 @@ class Field():
         """Used during deserialization
 
         """
-        return self._value or self._default
+        if self._value is None or not self.valid:
+            return self._default
+
+        else:
+            return self._type_specific_process(self._value)
     
     @value.setter
     def value(self, value):
@@ -46,8 +52,12 @@ class Field():
         a field's contents
 
         """
+        self.valid = True
+
         if self._value is None and self._strict:
+            self.valid = False
             raise self.MissingFieldData
+
         elif self._value is not None:
             self._type_specific_validation()
 
@@ -56,6 +66,9 @@ class Field():
 
     def _type_specific_setup(self, **kwargs):
         pass
+
+    def _type_specific_process(self, val: str) -> str:
+        return val
 
 
 class IntegerField(Field):
@@ -70,11 +83,11 @@ class IntegerField(Field):
 
     def _type_specific_validation(self):
         if not all([x in '-0123456789' for x in self._value]):
+            self.valid = False
             raise self.InvalidInteger
 
-    @Field.value.getter
-    def value(self) -> typing.Optional[int]:
-        return None if self._value is None else int(self._value)
+    def _type_specific_process(self, val: str) -> int:
+        return int(val)
 
 
 class FloatField(Field):
@@ -89,11 +102,11 @@ class FloatField(Field):
 
     def _type_specific_validation(self):
         if not all([x in '-.0123456789' for x in self._value]):
+            self.valid = False
             raise self.InvalidFloat
 
-    @Field.value.getter
-    def value(self) -> typing.Optional[int]:
-        return None if self._value is None else float(self._value)
+    def _type_specific_process(self, val: str) -> float:
+        return float(val)
 
 
 class ListField(Field):
@@ -103,17 +116,21 @@ class ListField(Field):
     ----------
         delimiter: :class:`str`
             Specifies the list delimiter. Defaults to ``","``
-        remove_blank: :class:`bool`
-            Specifies if empty list items should be removed. Defaults to ``False``
+        filtering: Optional[:class:`FunctionType`]
+            Specifies a filtering function to be applied to the contents.
+            Default ``lambda x: True``
+        mapping: Optional[:class:`FunctionType`]
+            Specifies a function to map across every element.
+            Default ``lambda x: x``
     """
-    def _type_specific_setup(self, delimiter: str=',', remove_blank: bool=False):
-        self.delimiter = delimiter
-        self.remove_blank = remove_blank
+    def _type_specific_setup(self, 
+        delimiter: str=',',
+        filtering: types.FunctionType=lambda x: True,
+        mapping: types.FunctionType=lambda x: x):
 
-    @Field.value.getter
-    def value(self) -> typing.Optional[list]:
-        if self.remove_blank:
-            return None if self._value is None else [x for x in self._value.split(self.delimiter) if bool(x)]
+        self.delimiter: str = delimiter
+        self.filter: types.FunctionType = filtering
+        self.map: types.FunctionType = mapping
 
-        else:
-            return None if self._value is None else self._value.split(self.delimiter)
+    def _type_specific_process(self, val: str) -> list:
+        return [self.map(x) for x in self._value.split(self.delimiter) if self.filter(x)]
