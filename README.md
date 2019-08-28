@@ -45,4 +45,6 @@ permitted_users = 1111; 2222
 
 ### Docs
 
-* Build docs from docs folder todo
+https://tinyconf.readthedocs.io/en/latest/tinyconf.html
+
+Docs can be built with Sphinx in `docs` folder

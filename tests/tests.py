@@ -117,6 +117,12 @@ class FieldTester(unittest.TestCase):
         self.assertEqual(field.value, [1, 2, 3, 4])
 
 class DeserializeTester(unittest.TestCase):
+    def assertDoesntRaise(self, proc):
+        try:
+            proc()
+        except Exception as e:
+            self.fail(f"{proc.__repr__()} raised {e.__repr__()}")
+
     def testIni(self):
         class IniTest(IniDeserializer):
             integer = IntegerField()
@@ -139,5 +145,27 @@ filterlist=1,0,1,0,1
         self.assertEqual(initest.list_a, ['1', '2', '3', '4'])
         self.assertEqual(initest.list_b, ['1,2', '3,4', 'ab'])
         self.assertEqual(initest.filterlist, [1, 1, 1])
+
+    def testIni2(self):
+        class Config(IniDeserializer):
+            token = Field(strict=True) # Loads field called 'token'. Fails if not present
+
+            client_id = IntegerField('client') # Loads field called 'client'
+
+            api_version = Field('apiv', default="8") # Loads field called 'apiv', if not present uses "8"
+
+            permitted_users = ListField(map=lambda x: int(x.strip()), default=[], delimiter=";")
+
+
+        self.assertRaises(Field.MissingFieldData, lambda: Config(string=''))
+        self.assertRaises(Field.MissingFieldData, lambda: Config(filename='confb.ini'))
+        self.assertDoesntRaise(lambda: Config(filename='confc.ini'))
+
+        config = Config(filename="confa.ini")
+
+        self.assertEqual(config.token, "abcdefghijklmno")
+        self.assertEqual(config.client_id, 123456789)
+        self.assertEqual(config.api_version, "8")
+        self.assertEqual(config.permitted_users, [1111, 2222])
 
 unittest.main(verbosity=2)

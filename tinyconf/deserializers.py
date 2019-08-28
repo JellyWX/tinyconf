@@ -35,7 +35,8 @@ class IniDeserializer(Deserializer):
         filename: Optional[:class:`str`]
             Load a file object by name as a config file
         file: Optional[:class:`IOBase`]
-            Load a file object as a config file
+            Load a file object as a config file. Please note- the file will not be
+            automatically closed.
         string: Optional[:class:`str`]
             Load a string as a config file
         section: Optional[:class:`str`]
@@ -44,11 +45,6 @@ class IniDeserializer(Deserializer):
             All other named arguments are passed to the underlying :class:`ConfigParser`
 
     """
-    class NoConfig(Exception):
-        """Raised when no config data is provided.
-
-        """
-        pass
 
     def __init__(self, *args,
         file: typing.Optional[IOBase]=None,
@@ -61,17 +57,18 @@ class IniDeserializer(Deserializer):
         if file is not None:
             cp.read_file(file)
         elif filename is not None:
-            cp.read_file(filename, 'r')
+            with open(filename, 'r') as f:
+                cp.read_file(f)
         else:
             cp.read_string(string)
 
-        try:
-            data: dict = dict(cp[section])
-        except:
-            raise self.NoConfig
+        data: dict = dict(cp[section])
         else:
             self._deserialize(data)
 
 class EnvDeserializer(Deserializer):
+    """Deserializes from the operating system environment variables
+
+    """
     def __init__(self, *args, **kwargs):
         self._deserialize(dict(os.environ))
