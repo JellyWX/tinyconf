@@ -63,8 +63,7 @@ class IniDeserializer(Deserializer):
             cp.read_string(string)
 
         data: dict = dict(cp[section])
-        else:
-            self._deserialize(data)
+        self._deserialize(data)
 
 class EnvDeserializer(Deserializer):
     """Deserializes from the operating system environment variables
