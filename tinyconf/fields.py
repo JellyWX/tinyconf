@@ -14,7 +14,16 @@ class Field():
             Will cause deserialization to raise :class:`MissingFieldData`
             if an item is missing
         default:
-            Specify a default value if the config doesn't specify one
+            Specify a default value if the config doesn't specify a value,
+            or the value specified fails validation.
+
+    Attributes
+    ----------
+        valid: :class:`bool`
+            If the field data is valid
+        name:
+            The name of the field (if specified)
+
     """
 
     class MissingFieldData(Exception):
@@ -116,21 +125,22 @@ class ListField(Field):
     ----------
         delimiter: :class:`str`
             Specifies the list delimiter. Defaults to ``","``
-        filtering: Optional[:class:`FunctionType`]
+        filter: Optional[:class:`FunctionType`]
             Specifies a filtering function to be applied to the contents.
             Default ``lambda x: True``
-        mapping: Optional[:class:`FunctionType`]
+        map: Optional[:class:`FunctionType`]
             Specifies a function to map across every element.
             Default ``lambda x: x``
+
     """
     def _type_specific_setup(self, 
         delimiter: str=',',
-        filtering: types.FunctionType=lambda x: True,
-        mapping: types.FunctionType=lambda x: x):
+        filter: types.FunctionType=lambda x: True,
+        map: types.FunctionType=lambda x: x):
 
-        self.delimiter: str = delimiter
-        self.filter: types.FunctionType = filtering
-        self.map: types.FunctionType = mapping
+        self._delimiter: str = delimiter
+        self._filter: types.FunctionType = filter
+        self._map: types.FunctionType = map
 
     def _type_specific_process(self, val: str) -> list:
-        return [self.map(x) for x in self._value.split(self.delimiter) if self.filter(x)]
+        return [self._map(x) for x in self._value.split(self._delimiter) if self._filter(x)]

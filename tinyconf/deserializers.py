@@ -1,18 +1,16 @@
 import typing
-from tinyconf.fields import Field
+from io import IOBase
+
+import os
 from configparser import ConfigParser
+
+from tinyconf.fields import Field
 
 class Deserializer():
     """Base class for deserializers
 
     """
-    def deserialize(self, data: dict):
-        """Deserializes `data`.
-
-        :param data: Dictionary of values to be deserialized
-        :type data: dict
-
-        """
+    def _deserialize(self, data: dict):
         for attrib in dir(self):
             d = getattr(self, attrib)
             if isinstance(d, Field):
@@ -32,39 +30,48 @@ class IniDeserializer(Deserializer):
     
     Parameters
     ----------
-    
         *args:
             All unnamed arguments are passed to the underlying :class:`ConfigParser`
+        filename: Optional[:class:`str`]
+            Load a file object by name as a config file
+        file: Optional[:class:`IOBase`]
+            Load a file object as a config file
+        string: Optional[:class:`str`]
+            Load a string as a config file
+        section: Optional[:class:`str`]
+            Which section should be loaded. Default is ``"DEFAULT"``
         **kwargs:
-            All named arguments are passed to the underlying :class:`ConfigParser`
+            All other named arguments are passed to the underlying :class:`ConfigParser`
 
-    Attributes
-    ----------
-
-        __filename__: Optional[:class:`str`]
-            Name of the file to be loaded. Either this or :attr:`__config__`
-            must be defined.
-
-        __config__: Optional[:class:`str`]
-            Raw string of ini-formatted data to be loaded. Either this or
-            :attr:`__filename__` must be defined
     """
     class NoConfig(Exception):
-        """Raised when both :attr:`IniDeserializer.__filename__` and
-        :attr:`IniDeserializer.__config__` are missing.
+        """Raised when no config data is provided.
 
         """
         pass
 
-    def __init__(self, *args, **kwargs):
-        cp = ConfigParser(*args, **kwargs)
-        try:
-            cp.read_file(open(self.__filename__, 'r'))
-        except:
-            try:
-                cp.read_string(self.__config__)
-            except NameError:
-                raise self.NoConfig
+    def __init__(self, *args,
+        file: typing.Optional[IOBase]=None,
+        filename: typing.Optional[str]=None,
+        string: str='',
+        section='DEFAULT',
+        **kwargs):
 
-        for _, section in cp.items():
-            self.deserialize(section)
+        cp = ConfigParser(*args, **kwargs)
+        if file is not None:
+            cp.read_file(file)
+        elif filename is not None:
+            cp.read_file(filename, 'r')
+        else:
+            cp.read_string(string)
+
+        try:
+            data: dict = dict(cp[section])
+        except:
+            raise self.NoConfig
+        else:
+            self._deserialize(data)
+
+class EnvDeserializer(Deserializer):
+    def __init__(self, *args, **kwargs):
+        self._deserialize(dict(os.environ))

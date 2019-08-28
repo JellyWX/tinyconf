@@ -14,14 +14,6 @@ class FieldTester(unittest.TestCase):
         except Exception as e:
             self.fail(f"{proc.__repr__()} raised {e.__repr__()}")
 
-    def setUp(self):
-        class TestDeserialize(Deserializer):
-            integer = IntegerField()
-            float_ = FloatField('float')
-            string = Field('string')
-            list_a = ListField('list')
-            list_b = ListField('differentlist', delimiter=';')
-
     def testField(self):
         field = Field("test")
 
@@ -49,6 +41,22 @@ class FieldTester(unittest.TestCase):
 
         self.assertEqual(field.value, "t")
 
+    def testDefault(self):
+        field = Field(default="123")
+
+        field.value = "t"
+
+        self.assertEqual(field.value, "t")
+
+        field.value = None
+
+        self.assertEqual(field.value, "123")
+
+        field.value = "t"
+        field.valid = False
+
+        self.assertEqual(field.value, "123")
+
     def testInteger(self):
         field = IntegerField("test")
 
@@ -65,5 +73,71 @@ class FieldTester(unittest.TestCase):
 
         self.assertRaises(IntegerField.InvalidInteger, field.validate)
         self.assertTrue(field.value is None)
+
+    def testFloat(self):
+        field = FloatField(default=0.0)
+
+        field.value = "t"
+
+        self.assertRaises(FloatField.InvalidFloat, field.validate)
+        self.assertEqual(field.value, 0.0)
+
+        field.value = "14"
+
+        self.assertDoesntRaise(field.validate)
+        self.assertEqual(field.value, 14)
+
+        field.value = "14.7"
+
+        self.assertDoesntRaise(field.validate)
+        self.assertEqual(field.value, 14.7)
+
+    def testList(self):
+        field = ListField()
+
+        field.value = "a,b,e,g"
+
+        self.assertEqual(field.value, ['a', 'b', 'e', 'g'])
+
+        field._filter = lambda x: x in 'ab'
+
+        self.assertEqual(field.value, ['a', 'b'])
+
+        field._filter = lambda x: True
+        field.value = "1;2;3;4"
+
+        self.assertEqual(field.value, ['1;2;3;4'])
+
+        field._delimiter = ';'
+
+        self.assertEqual(field.value, ['1', '2', '3', '4'])
+
+        field._map = lambda x: int(x)
+
+        self.assertEqual(field.value, [1, 2, 3, 4])
+
+class DeserializeTester(unittest.TestCase):
+    def testIni(self):
+        class IniTest(IniDeserializer):
+            integer = IntegerField()
+            float_ = FloatField('float')
+            string = Field('string')
+            list_a = ListField('list')
+            list_b = ListField('differentlist', delimiter=';')
+            filterlist = ListField(filter=lambda x: int(x) == 1, map=lambda x: int(x))
+
+        initest = IniTest(string='''[CONTENTS]
+integer=1
+float=5.0
+list=1,2,3,4
+differentlist=1,2;3,4;ab
+filterlist=1,0,1,0,1
+            ''', section='CONTENTS')
+
+        self.assertEqual(initest.integer, 1)
+        self.assertEqual(initest.float_, 5.0)
+        self.assertEqual(initest.list_a, ['1', '2', '3', '4'])
+        self.assertEqual(initest.list_b, ['1,2', '3,4', 'ab'])
+        self.assertEqual(initest.filterlist, [1, 1, 1])
 
 unittest.main(verbosity=2)
