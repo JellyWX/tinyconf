@@ -8,7 +8,7 @@ version = None
 with open("tinyconf/__init__.py", "r") as f:
     for line in f:
         if line.startswith('__version__'):
-            version = line.split(' ')[-1]
+            version = line.split(' ')[-1].strip(' \'')
 
 setuptools.setup(
     name="tinyconf",
