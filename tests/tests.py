@@ -4,6 +4,7 @@ sys.path.append("..") # Adds higher directory to python modules path.
 import tinyconf
 from tinyconf.deserializers import *
 from tinyconf.fields import *
+from tinyconf.section import Section
 
 import unittest
 
@@ -157,15 +158,38 @@ filterlist=1,0,1,0,1
             permitted_users = ListField(map=lambda x: int(x.strip()), default=[], delimiter=";")
 
 
+        self.assertRaises(Field.MissingFieldData, lambda: Config(string='', section='DEFAULT'))
         self.assertRaises(Field.MissingFieldData, lambda: Config(string=''))
-        self.assertRaises(Field.MissingFieldData, lambda: Config(filename='confb.ini'))
-        self.assertDoesntRaise(lambda: Config(filename='confc.ini'))
+        self.assertRaises(Field.MissingFieldData, lambda: Config(filename='confb.ini', section='DEFAULT'))
+        self.assertDoesntRaise(lambda: Config(filename='confc.ini', section='DEFAULT'))
 
-        config = Config(filename="confa.ini")
+        config = Config(filename="confa.ini", section='DEFAULT')
 
         self.assertEqual(config.token, "abcdefghijklmno")
         self.assertEqual(config.client_id, 123456789)
         self.assertEqual(config.api_version, "8")
         self.assertEqual(config.permitted_users, [1111, 2222])
+
+    def testIniSectioning(self):
+        class Config(IniDeserializer):
+            token = IntegerField()
+            username = Field()
+
+            username_mysql = Field(name='username')
+            passwd = Field()
+            host = Field()
+
+            client = Field()
+
+            DEFAULT = Section(token, username)
+            MYSQL = Section(username_mysql, passwd, host)
+            PASSMARK = Section(client)
+
+        config = Config(filename="confd.ini")
+
+        self.assertEqual(config.username_mysql, "jude")
+        self.assertEqual(config.username, "hello")
+        self.assertEqual(config.host, None)
+        self.assertEqual(config.client, "fred")
 
 unittest.main(verbosity=2)

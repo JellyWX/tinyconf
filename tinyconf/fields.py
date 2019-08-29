@@ -38,6 +38,7 @@ class Field():
         self._value: typing.Optional[str] = None
         self._default: typing.Any = default
         self._strict: bool = strict
+        self.section = None
 
         self._type_specific_setup(**kwargs)
 
