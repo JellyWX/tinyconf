@@ -20,6 +20,14 @@ tinyconf.fields module
    :undoc-members:
    :show-inheritance:
 
+tinyconf.section module
+-----------------------
+
+.. automodule:: tinyconf.section
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 
 Module contents
 ---------------

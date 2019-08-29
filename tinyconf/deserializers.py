@@ -43,7 +43,7 @@ class IniDeserializer(Deserializer):
             Load a string as a config file
         section: Optional[:class:`str`]
             Which section should be loaded. Default is ``None``. If ``None``, will
-            load sections based on :class:`Section` objects within model.
+            load sections based on :class:`tinyconf.section.Section` objects within model.
         **kwargs:
             All other named arguments are passed to the underlying :class:`ConfigParser`
 
