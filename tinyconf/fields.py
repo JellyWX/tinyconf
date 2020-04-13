@@ -1,7 +1,8 @@
 import typing
 import types
 
-class Field():
+
+class Field:
     """Field type that deserializes directly into a :class:`str`
 
     Parameters
@@ -32,7 +33,8 @@ class Field():
         """
         pass
 
-    def __init__(self, name: typing.Optional[str]=None, *, strict: bool=False, default: typing.Any=None, **kwargs):
+    def __init__(self, name: typing.Optional[str] = None, *, strict: bool = False, default: typing.Any = None,
+                 **kwargs):
         self.name: typing.Optional[str] = name
         self.valid: bool = True
         self._value: typing.Optional[str] = None
@@ -52,7 +54,7 @@ class Field():
 
         else:
             return self._type_specific_process(self._value)
-    
+
     @value.setter
     def value(self, value):
         self._value = value
@@ -85,6 +87,7 @@ class IntegerField(Field):
     """Field derivative that deserializes an integer
 
     """
+
     class InvalidInteger(Exception):
         """Exception raised when the field contents are not a valid integer
 
@@ -104,6 +107,7 @@ class FloatField(Field):
     """Field derivative that deserializes a floating point value
 
     """
+
     class InvalidFloat(Exception):
         """Exception raised when the field contents are not a valid float
 
@@ -117,6 +121,27 @@ class FloatField(Field):
 
     def _type_specific_process(self, val: str) -> float:
         return float(val)
+
+
+class BooleanField(Field):
+    """Field derivative that deserializes some sort of boolean value
+
+    Parameters
+    ----------
+        comparators: List[:class:`str`]
+            Specifies what the value should be compared with. Defaults to ['1', 'y', 'yes', 't', 'true']
+
+    """
+
+    def _type_specific_setup(self,
+                             comparators: typing.List[str] = ['1', 'y', 'yes', 't', 'true']):
+        self._comparators = comparators
+
+    def _type_specific_process(self, val: str) -> bool:
+        if val in self._comparators:
+            return True
+        else:
+            return False
 
 
 class ListField(Field):
@@ -134,11 +159,11 @@ class ListField(Field):
             Default ``lambda x: x``
 
     """
-    def _type_specific_setup(self, 
-        delimiter: str=',',
-        filter: types.FunctionType=lambda x: True,
-        map: types.FunctionType=lambda x: x):
 
+    def _type_specific_setup(self,
+                             delimiter: str = ',',
+                             filter: types.FunctionType = lambda x: True,
+                             map: types.FunctionType = lambda x: x):
         self._delimiter: str = delimiter
         self._filter: types.FunctionType = filter
         self._map: types.FunctionType = map
